@@ -34,6 +34,9 @@ frontend/.vite/
 !results/*.csv
 !results/*.png
 
+# Documentation (local only)
+docs/
+
 # OS
 .DS_Store
 Thumbs.db
