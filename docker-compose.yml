@@ -1,0 +1,227 @@
+# ============================================================
+# Multi-Agent Cooperative Security System (MACSS)
+# docker compose up --build
+# ============================================================
+
+networks:
+  macss-net:
+    driver: bridge
+
+volumes:
+  redis-data:
+  postgres-data:
+
+services:
+
+  # ── Infrastructure ──────────────────────────────────────────
+
+  redis:
+    image: redis:7-alpine
+    container_name: macss-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - macss-net
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: macss-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-macss_db}
+      POSTGRES_USER: ${POSTGRES_USER:-macss_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-macss_pass}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - macss-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-macss_user} -d ${POSTGRES_DB:-macss_db}"]
+      interval: 5s
+      timeout: 3s
+      retries: 15
+
+  # ── Backend API ──────────────────────────────────────────────
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: macss-backend
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      REDIS_HOST: redis
+      POSTGRES_HOST: postgres
+      SERVICE_MODE: api
+    ports:
+      - "8000:8000"
+    depends_on:
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    networks:
+      - macss-net
+    volumes:
+      - ./results:/app/results
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:8000/api/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
+
+  # ── Agents ───────────────────────────────────────────────────
+
+  perimeter-agent:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: macss-perimeter
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      REDIS_HOST: redis
+      SERVICE_MODE: agent
+      AGENT_NAME: perimeter-agent
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - macss-net
+    command: ["python", "-m", "app.agents.perimeter.agent"]
+
+  endpoint-agent:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: macss-endpoint
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      REDIS_HOST: redis
+      SERVICE_MODE: agent
+      AGENT_NAME: endpoint-agent
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - macss-net
+    command: ["python", "-m", "app.agents.endpoint.agent"]
+
+  forensics-agent:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: macss-forensics
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      REDIS_HOST: redis
+      POSTGRES_HOST: postgres
+      SERVICE_MODE: agent
+      AGENT_NAME: forensics-agent
+    depends_on:
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    networks:
+      - macss-net
+    command: ["python", "-m", "app.agents.forensics.agent"]
+
+  coordinator-agent:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: macss-coordinator
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      REDIS_HOST: redis
+      POSTGRES_HOST: postgres
+      SERVICE_MODE: agent
+      AGENT_NAME: coordinator-agent
+    depends_on:
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    networks:
+      - macss-net
+    command: ["python", "-m", "app.agents.coordinator.agent"]
+
+  baseline-agent:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: macss-baseline
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      REDIS_HOST: redis
+      POSTGRES_HOST: postgres
+      SERVICE_MODE: agent
+      AGENT_NAME: baseline-agent
+    depends_on:
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    networks:
+      - macss-net
+    command: ["python", "-m", "app.agents.baseline.agent"]
+
+  # ── Simulator ────────────────────────────────────────────────
+
+  simulator:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: macss-simulator
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      REDIS_HOST: redis
+      SERVICE_MODE: simulator
+    depends_on:
+      redis:
+        condition: service_healthy
+      backend:
+        condition: service_healthy
+    networks:
+      - macss-net
+    volumes:
+      - ./config:/app/config
+      - ./results:/app/results
+    command: ["python", "-m", "app.simulations.simulator"]
+
+  # ── Frontend ─────────────────────────────────────────────────
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: macss-frontend
+    restart: unless-stopped
+    environment:
+      VITE_API_URL: http://localhost:8000
+      VITE_WS_URL: ws://localhost:8000
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    networks:
+      - macss-net

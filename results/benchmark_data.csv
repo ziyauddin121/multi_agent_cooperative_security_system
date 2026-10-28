@@ -1,0 +1,11 @@
+trial,architecture,detection_time_ms,containment_time_ms,blast_radius,decision_consistency,conflicts_resolved
+1,Multi-Agent (MACSS),101.8,401.2,1,94.3,4
+2,Multi-Agent (MACSS),120.4,395.9,1,94.8,2
+3,Multi-Agent (MACSS),132.9,395.3,1,95.4,3
+4,Multi-Agent (MACSS),131.0,391.9,1,94.5,3
+5,Multi-Agent (MACSS),115.8,388.4,2,97.4,2
+1,Single-Agent Baseline,290.8,1089.1,4,72.9,0
+2,Single-Agent Baseline,237.6,1194.6,4,73.4,0
+3,Single-Agent Baseline,278.3,1177.0,4,74.7,0
+4,Single-Agent Baseline,265.5,1216.5,4,72.8,0
+5,Single-Agent Baseline,307.1,1095.6,3,70.9,0

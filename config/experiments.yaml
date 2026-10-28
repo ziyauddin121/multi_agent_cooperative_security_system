@@ -1,0 +1,195 @@
+# ============================================================
+# MACSS — Experiment Configuration
+# Each entry defines one reproducible experiment run.
+# Use scripts/run_experiment.py to execute these.
+# ============================================================
+
+experiments:
+
+  # ── DDoS Scenarios ──────────────────────────────────────────
+  - name: ddos_low
+    scenario: ddos
+    attack_intensity: low
+    number_of_hosts: 4
+    random_seed: 42
+    duration_seconds: 30
+    extra_config:
+      request_rate: 2000
+      source_ips: 5
+
+  - name: ddos_medium
+    scenario: ddos
+    attack_intensity: medium
+    number_of_hosts: 4
+    random_seed: 42
+    duration_seconds: 30
+    extra_config:
+      request_rate: 5000
+      source_ips: 20
+
+  - name: ddos_high
+    scenario: ddos
+    attack_intensity: high
+    number_of_hosts: 4
+    random_seed: 42
+    duration_seconds: 30
+    extra_config:
+      request_rate: 9500
+      source_ips: 50
+
+  # ── Ransomware Scenarios ─────────────────────────────────────
+  - name: ransomware_low
+    scenario: ransomware
+    attack_intensity: low
+    number_of_hosts: 4
+    random_seed: 42
+    duration_seconds: 30
+    extra_config:
+      file_rename_rate: 100
+      target_host: host-02
+
+  - name: ransomware_medium
+    scenario: ransomware
+    attack_intensity: medium
+    number_of_hosts: 4
+    random_seed: 42
+    duration_seconds: 30
+    extra_config:
+      file_rename_rate: 500
+      target_host: host-02
+
+  - name: ransomware_high
+    scenario: ransomware
+    attack_intensity: high
+    number_of_hosts: 4
+    random_seed: 42
+    duration_seconds: 30
+    extra_config:
+      file_rename_rate: 2000
+      target_host: host-02
+
+  # ── Lateral Movement Scenarios ───────────────────────────────
+  - name: lateral_low
+    scenario: lateral_movement
+    attack_intensity: low
+    number_of_hosts: 4
+    random_seed: 42
+    duration_seconds: 30
+    extra_config:
+      hop_count: 2
+      auth_attempts_per_hop: 3
+
+  - name: lateral_medium
+    scenario: lateral_movement
+    attack_intensity: medium
+    number_of_hosts: 4
+    random_seed: 42
+    duration_seconds: 30
+    extra_config:
+      hop_count: 3
+      auth_attempts_per_hop: 8
+
+  - name: lateral_high
+    scenario: lateral_movement
+    attack_intensity: high
+    number_of_hosts: 4
+    random_seed: 42
+    duration_seconds: 30
+    extra_config:
+      hop_count: 4
+      auth_attempts_per_hop: 20
+
+  # ── Combined Attack Campaign ─────────────────────────────────
+  - name: combined_attack_campaign
+    scenario: combined
+    attack_intensity: high
+    number_of_hosts: 4
+    random_seed: 42
+    duration_seconds: 120
+    extra_config:
+      phases:
+        - phase: 1
+          type: ddos
+          target: service-01
+          duration: 20
+        - phase: 2
+          type: initial_compromise
+          target: host-02
+          duration: 10
+        - phase: 3
+          type: ransomware
+          target: host-02
+          duration: 30
+        - phase: 4
+          type: lateral_movement
+          from: host-02
+          to: host-03
+          duration: 30
+        - phase: 5
+          type: lateral_movement
+          from: host-03
+          to: host-04
+          duration: 30
+
+  # ── Baseline Experiments (same scenarios, single agent) ──────
+  - name: baseline_ddos_high
+    scenario: ddos
+    attack_intensity: high
+    number_of_hosts: 4
+    random_seed: 42
+    duration_seconds: 30
+    is_multi_agent: false
+    extra_config:
+      request_rate: 9500
+      source_ips: 50
+
+  - name: baseline_ransomware_high
+    scenario: ransomware
+    attack_intensity: high
+    number_of_hosts: 4
+    random_seed: 42
+    duration_seconds: 30
+    is_multi_agent: false
+    extra_config:
+      file_rename_rate: 2000
+      target_host: host-02
+
+  - name: baseline_combined
+    scenario: combined
+    attack_intensity: high
+    number_of_hosts: 4
+    random_seed: 42
+    duration_seconds: 120
+    is_multi_agent: false
+    extra_config:
+      phases:
+        - phase: 1
+          type: ddos
+          target: service-01
+          duration: 20
+        - phase: 2
+          type: initial_compromise
+          target: host-02
+          duration: 10
+        - phase: 3
+          type: ransomware
+          target: host-02
+          duration: 30
+        - phase: 4
+          type: lateral_movement
+          from: host-02
+          to: host-03
+          duration: 30
+        - phase: 5
+          type: lateral_movement
+          from: host-03
+          to: host-04
+          duration: 30
+
+# ── Consistency Tests (10 runs each) ────────────────────────────
+consistency_runs: 10
+consistency_scenarios:
+  - ddos_high
+  - ransomware_high
+  - lateral_high
+  - combined_attack_campaign

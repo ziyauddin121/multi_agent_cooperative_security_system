@@ -1,0 +1,21 @@
+{
+  "timestamp": 1793192005.3906295,
+  "trials_per_group": 3,
+  "macss": {
+    "mean_containment_time_ms": 394.33,
+    "mean_detection_time_ms": 125.2,
+    "mean_blast_radius": 1.67,
+    "mean_decision_consistency": 95.63
+  },
+  "baseline": {
+    "mean_containment_time_ms": 1157.53,
+    "mean_detection_time_ms": 283.13,
+    "mean_blast_radius": 3.0,
+    "mean_decision_consistency": 71.37
+  },
+  "comparative_deltas": {
+    "containment_time_speedup_percent": 65.9,
+    "blast_radius_reduction_percent": 44.3,
+    "consistency_improvement_percent": 24.3
+  }
+}

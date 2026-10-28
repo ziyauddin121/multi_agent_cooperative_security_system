@@ -1,0 +1,1 @@
+"""MACSS Backend Application."""
